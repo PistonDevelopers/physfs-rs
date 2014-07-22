@@ -18,15 +18,6 @@ extern {
     fn PHYSFS_getLastError() -> *const ::libc::c_char;
     //nonzero if success, zero if error
     fn PHYSFS_mount(newDir : *const ::libc::c_char, mountPoint : *const ::libc::c_char, appendToPath : ::libc::c_int) -> ::libc::c_int;
-
-    //valid filehandle on success, NULL on failure
-    fn PHYSFS_openAppend(filename : *const ::libc::c_char) -> *const RawFile;
-    fn PHYSFS_openRead(filename : *const ::libc::c_char) -> *const RawFile;
-    fn PHYSFS_openWrite(filename : *const ::libc::c_char) -> *const RawFile;
-}
-///A wrapper for the PHYSFS_File type.
-struct RawFile {
-    opaque : *const ::libc::c_void,
 }
 ///The access point for PhysFS function calls.
 ///
