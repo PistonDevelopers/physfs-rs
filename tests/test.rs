@@ -6,8 +6,8 @@ use physfs::*;
 
 mod directory;
 
-//from project_root/target/test/
-static path_to_here : &'static str = "../../tests/";
+//from project_root
+static path_to_here : &'static str = "tests/";
 
 #[test]
 fn test_create_physfs_context() {
