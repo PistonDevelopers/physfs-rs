@@ -1,5 +1,5 @@
 use primitives::*;
-use super::PhysFSContext;
+use super::{PhysFSContext, PHYSFS_LOCK};
 
 #[link(name = "physfs")]
 extern {
@@ -37,28 +37,29 @@ struct RawFile {
 pub struct File<'f> {
     raw : *const RawFile,
     mode : Mode,
-    context : &'f PhysFSContext<'f>,
+    context : &'f PhysFSContext,
 }
 
 impl <'f> File<'f> {
     ///Opens a file with a specific mode.
     pub fn open<'f>(context : &'f PhysFSContext, filename : String, mode : Mode) -> Result<File<'f>, String> {
-
+        let _g = unsafe{ PHYSFS_LOCK.lock()};
         let as_c_str : *const ::libc::c_char = filename.as_slice().as_ptr() as *const ::libc::c_char;
         let raw = match mode {
             Append => unsafe{ PHYSFS_openAppend(as_c_str) },
             Read => unsafe{ PHYSFS_openRead(as_c_str) },
             Write => unsafe{ PHYSFS_openWrite(as_c_str) }
         };
-        if raw.is_null() {Err(context.get_last_error())}
+        if raw.is_null() {Err(PhysFSContext::get_last_error())}
         else {Ok(File{raw : raw, mode : mode, context : context})}
     }
     ///Closes a file handle.
     fn close(&self) -> Result<(), String> {
         match unsafe {
+            let _g = PHYSFS_LOCK.lock();
             PHYSFS_close(self.raw)
         } {
-            0 => Err(self.context.get_last_error()),
+            0 => Err(PhysFSContext::get_last_error()),
             _ => Ok(())
         }
     }
@@ -66,6 +67,7 @@ impl <'f> File<'f> {
     ///Reads from a file.
     pub fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
         let ret = unsafe {
+            let _g = PHYSFS_LOCK.lock();
             PHYSFS_read(
                 self.raw, 
                 buf.as_ptr() as *mut ::libc::c_void,
@@ -75,7 +77,7 @@ impl <'f> File<'f> {
         };
 
         match ret {
-            -1 => Err(self.context.get_last_error()),
+            -1 => Err(PhysFSContext::get_last_error()),
             _ => Ok(ret as u64)
         }
     }
@@ -85,6 +87,7 @@ impl <'f> File<'f> {
     ///that the buffer is the correct length.
     pub fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
         let ret = unsafe {
+            let _g = PHYSFS_LOCK.lock();
             PHYSFS_write(
                 self.raw,
                 buf.as_ptr() as *const ::libc::c_void,
@@ -94,7 +97,7 @@ impl <'f> File<'f> {
         };
 
         match ret {
-            -1 => Err(self.context.get_last_error()),
+            -1 => Err(PhysFSContext::get_last_error()),
             _ => Ok(ret as u64)
         }
     }

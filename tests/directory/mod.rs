@@ -8,7 +8,7 @@ fn read_file_from_directory() {
         Ok(con) => con
     };
 
-    assert!(con.is_init());
+    assert!(PhysFSContext::is_init());
 
     match con.mount(super::path_to_here.to_string(), "/test/".to_string(), true) {
         Err(msg) => fail!(msg),
