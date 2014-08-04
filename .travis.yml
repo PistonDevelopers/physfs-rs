@@ -1,14 +1,7 @@
 language: c
 install:
-    #install rust
-    - curl -O http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz
-    - tar xfz rust-nightly-x86_64-unknown-linux-gnu.tar.gz
-    - (cd rust-nightly-x86_64-unknown-linux-gnu/ && sudo ./install.sh)
-    #install cargo
-    - git clone --recursive https://github.com/rust-lang/cargo
-    - cd cargo
-    - make && sudo make install
-    - cd -
+    #install rust and cargo latest
+    - curl www.rust-lang.org/rustup.sh | sudo bash
     #install PhysFS
     - curl -O http://icculus.org/physfs/downloads/physfs-2.0.3.tar.bz2
     - tar -jxf physfs-2.0.3.tar.bz2
@@ -17,3 +10,5 @@ install:
     - make && sudo make install
 script:
     - cargo build --verbose
+os:
+    - linux
