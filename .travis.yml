@@ -1,14 +1,20 @@
-language: c
+language: rust
+os:
+    - linux
+    - osx
+env:
+    global:
+        - LD_LIBRARY_PATH: /usr/local/lib
 install:
-    #install rust and cargo latest
-    - curl www.rust-lang.org/rustup.sh | sudo bash
-    #install PhysFS
+    # Install PhysFS
     - curl -O http://icculus.org/physfs/downloads/physfs-2.0.3.tar.bz2
     - tar -jxf physfs-2.0.3.tar.bz2
     - cd physfs-2.0.3
     - cmake -G "Unix Makefiles"
     - make && sudo make install
+before_script:
+    - rustc -v
+    - cargo -V
 script:
-    - cargo build --verbose
-os:
-    - linux
+    - cargo build -v
+    - cargo test -v

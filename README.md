@@ -1,6 +1,5 @@
-![](https://travis-ci.org/PistonDevelopers/physfs-rs.svg?branch=master)
+#physfs-rs [![Build Status](https://travis-ci.org/PistonDevelopers/physfs-rs.svg)](https://travis-ci.org/PistonDevelopers/physfs-rs)
 
-#physfs-rs
 ##Rust bindings for PhysFS
 
 This project is built against the Rust nightly and PhysFS 2.0.3
