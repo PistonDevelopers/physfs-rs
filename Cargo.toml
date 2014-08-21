@@ -4,7 +4,7 @@ name = "physfs-rs"
 version = "0.1.0"
 authors = [ "Robert Habermeier" ]
 
-[[lib]]
+[lib]
 
 name = "physfs"
 path = "./src/lib.rs"
