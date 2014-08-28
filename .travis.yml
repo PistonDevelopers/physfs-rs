@@ -4,7 +4,6 @@ os:
     - osx
 env:
     global:
-        - LD_LIBRARY_PATH: /usr/local/lib
         - secure: gEfvLnzfT9U2IEqB6nL39wozQK5KFcJfOh+Pk06j4Ml4Arn7ZQAob/hI+QbPa9xspVl7xYJk+LU1jKzOlka5WiEnU39EwgVowhJxIbqmhvTCUhGv/YIpMCAdA8++FQJMXtC1YUcBjyj2IuZGQIZdu1bfmZCznodZpaE45OzMpqw=
 install:
     # Install PhysFS
