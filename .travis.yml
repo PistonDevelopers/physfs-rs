@@ -5,6 +5,7 @@ os:
 env:
     global:
         - secure: gEfvLnzfT9U2IEqB6nL39wozQK5KFcJfOh+Pk06j4Ml4Arn7ZQAob/hI+QbPa9xspVl7xYJk+LU1jKzOlka5WiEnU39EwgVowhJxIbqmhvTCUhGv/YIpMCAdA8++FQJMXtC1YUcBjyj2IuZGQIZdu1bfmZCznodZpaE45OzMpqw=
+        - LD_LIBRARY_PATH: /usr/local/lib
 install:
     # Install PhysFS
     - curl -O http://icculus.org/physfs/downloads/physfs-2.0.3.tar.bz2
