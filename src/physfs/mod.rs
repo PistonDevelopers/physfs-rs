@@ -120,7 +120,7 @@ impl PhysFSContext {
 
         let mut it = cstr.as_bytes_no_nul().iter().map(|&x| x as u8 as char);
         for c in it {
-            err.push_char(c);
+            err.push(c);
         }
         err
     }
