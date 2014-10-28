@@ -31,7 +31,7 @@ fn read_file_from_directory() {
     let mut msg = String::new();
     for byte in buf.iter() {
         if *byte == 0 { break }
-        msg.push_char(*byte as char);
+        msg.push(*byte as char);
     }
 
     assert!(msg.as_slice() == "Read from me.");
