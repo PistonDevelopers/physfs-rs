@@ -46,9 +46,9 @@ impl <'f> File<'f> {
         let _g = unsafe{ PHYSFS_LOCK.lock()};
         let as_c_str : *const ::libc::c_char = filename.as_slice().as_ptr() as *const ::libc::c_char;
         let raw = match mode {
-            Append => unsafe{ PHYSFS_openAppend(as_c_str) },
-            Read => unsafe{ PHYSFS_openRead(as_c_str) },
-            Write => unsafe{ PHYSFS_openWrite(as_c_str) }
+            Mode::Append => unsafe{ PHYSFS_openAppend(as_c_str) },
+            Mode::Read => unsafe{ PHYSFS_openRead(as_c_str) },
+            Mode::Write => unsafe{ PHYSFS_openWrite(as_c_str) }
         };
         if raw.is_null() {Err(PhysFSContext::get_last_error())}
         else {Ok(File{raw : raw, mode : mode, context : context})}
