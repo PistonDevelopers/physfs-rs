@@ -29,6 +29,7 @@ pub enum Mode
     Write,
 }
 ///A wrapper for the PHYSFS_File type.
+#[repr(C)]
 struct RawFile {
     opaque : *const ::libc::c_void,
 }
