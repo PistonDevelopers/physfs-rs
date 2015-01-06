@@ -2,6 +2,7 @@
 
 extern crate physfs;
 
+use std::thread::Thread;
 use physfs::*;
 
 mod directory;
@@ -17,10 +18,14 @@ fn test_create_physfs_context() {
 
 #[test]
 fn test_threaded_physfs_contexts() {
-    for _ in range(0i, 10) {
-        spawn(proc() {
+    let threads: Vec<_> = range(0i, 10).map(|_| {
+        Thread::spawn(move || {
             let con = PhysFSContext::new().unwrap();
             assert!(PhysFSContext::is_init())
-        });
+        })
+    }).collect();
+
+    for thread in threads.into_iter() {
+        let _ = thread.join();
     }
 }
