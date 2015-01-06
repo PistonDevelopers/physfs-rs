@@ -19,6 +19,7 @@ extern {
     fn PHYSFS_write(file : *const RawFile, buffer : *const ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
 }
 ///Possible ways to open a file.
+#[derive(Copy)]
 pub enum Mode
 {
     ///Append to the end of the file.
@@ -29,6 +30,7 @@ pub enum Mode
     Write,
 }
 ///A wrapper for the PHYSFS_File type.
+#[repr(C)]
 struct RawFile {
     opaque : *const ::libc::c_void,
 }
@@ -42,7 +44,7 @@ pub struct File<'f> {
 
 impl <'f> File<'f> {
     ///Opens a file with a specific mode.
-    pub fn open<'f>(context : &'f PhysFSContext, filename : String, mode : Mode) -> Result<File<'f>, String> {
+    pub fn open<'g>(context : &'g PhysFSContext, filename : String, mode : Mode) -> Result<File<'g>, String> {
         let _g = unsafe{ PHYSFS_LOCK.lock()};
         let as_c_str : *const ::libc::c_char = filename.as_slice().as_ptr() as *const ::libc::c_char;
         let raw = match mode {

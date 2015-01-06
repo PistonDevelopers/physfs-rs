@@ -3,12 +3,11 @@
 #![crate_type = "lib"]
 #![license = "zlib"]
 
-#![deny(missing_doc)]
+#![deny(missing_docs)]
 #![allow(dead_code)]
 #![feature(globs)]
 #![feature(unsafe_destructor)]
 extern crate libc;
-extern crate sync;
 
 pub use physfs::*;
 pub use physfs::file::*;

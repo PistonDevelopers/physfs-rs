@@ -10,17 +10,17 @@ fn read_file_from_directory() {
 
     assert!(PhysFSContext::is_init());
 
-    match con.mount(super::path_to_here.to_string(), "/test/".to_string(), true) {
+    match con.mount(super::PATH_TO_HERE.to_string(), "/test/".to_string(), true) {
         Err(msg) => panic!(msg),
         _ => {}
     }
 
-    let file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Read) {
+    let file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
         Ok(f) => f,
         Err(msg) => panic!(msg)
     };
 
-    let mut bytes = [0u8, ..32];
+    let mut bytes = [0u8, 32];
     let buf = bytes.as_mut_slice();
 
     match file.read(buf, 1, 32) {
