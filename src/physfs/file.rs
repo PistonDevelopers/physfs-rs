@@ -42,7 +42,7 @@ pub struct File<'f> {
 
 impl <'f> File<'f> {
     ///Opens a file with a specific mode.
-    pub fn open<'f>(context : &'f PhysFSContext, filename : String, mode : Mode) -> Result<File<'f>, String> {
+    pub fn open<'g>(context : &'g PhysFSContext, filename : String, mode : Mode) -> Result<File<'g>, String> {
         let _g = unsafe{ PHYSFS_LOCK.lock()};
         let as_c_str : *const ::libc::c_char = filename.as_slice().as_ptr() as *const ::libc::c_char;
         let raw = match mode {
