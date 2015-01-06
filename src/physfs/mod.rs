@@ -1,4 +1,4 @@
-use sync::mutex::{StaticMutex, MUTEX_INIT};
+use std::sync::{StaticMutex, MUTEX_INIT};
 use std::c_str::CString;
 
 ///For locking physfs operations
