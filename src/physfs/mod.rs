@@ -24,8 +24,9 @@ extern {
 ///The access point for PhysFS function calls.
 ///
 ///It aims to be thread-safe.
-#[deriving(Send)]
 pub struct PhysFSContext;
+
+unsafe impl Send for PhysFSContext {}
 
 impl PhysFSContext {
     ///Creates a new PhysFS context.
