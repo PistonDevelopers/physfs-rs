@@ -10,7 +10,7 @@ fn read_file_from_directory() {
 
     assert!(PhysFSContext::is_init());
 
-    match con.mount(super::path_to_here.to_string(), "/test/".to_string(), true) {
+    match con.mount(super::PATH_TO_HERE.to_string(), "/test/".to_string(), true) {
         Err(msg) => panic!(msg),
         _ => {}
     }

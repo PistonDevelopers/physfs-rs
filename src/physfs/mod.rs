@@ -19,7 +19,7 @@ extern {
     //string if success, NULL if error.
     fn PHYSFS_getLastError() -> *const ::libc::c_char;
     //nonzero if success, zero if error
-    fn PHYSFS_mount(newDir : *const ::libc::c_char, mountPoint : *const ::libc::c_char, appendToPath : ::libc::c_int) -> ::libc::c_int;
+    fn PHYSFS_mount(new_dir : *const ::libc::c_char, mount_point : *const ::libc::c_char, append_to_path : ::libc::c_int) -> ::libc::c_int;
 }
 ///The access point for PhysFS function calls.
 ///
@@ -88,15 +88,15 @@ impl PhysFSContext {
         }
     }
     ///Adds an archive or directory to the search path.
-    ///mountPoint is the location in the tree to mount it to.
-    pub fn mount(&self, newDir : String, mountPoint : String, appendToPath : bool) -> Result<(), String>
+    ///mount_point is the location in the tree to mount it to.
+    pub fn mount(&self, new_dir : String, mount_point : String, append_to_path : bool) -> Result<(), String>
     {
         match unsafe {
             let _g = PHYSFS_LOCK.lock();
             PHYSFS_mount(
-                newDir.as_slice().as_ptr() as *const ::libc::c_char,
-                mountPoint.as_slice().as_ptr() as *const ::libc::c_char,
-                appendToPath as ::libc::c_int
+                new_dir.as_slice().as_ptr() as *const ::libc::c_char,
+                mount_point.as_slice().as_ptr() as *const ::libc::c_char,
+                append_to_path as ::libc::c_int
             )
         } {
             0 => Err(PhysFSContext::get_last_error()),
