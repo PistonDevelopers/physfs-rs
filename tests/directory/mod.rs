@@ -15,7 +15,7 @@ fn read_file_from_directory() {
         _ => {}
     }
 
-    let file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Read) {
+    let file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
         Ok(f) => f,
         Err(msg) => panic!(msg)
     };
