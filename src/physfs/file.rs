@@ -19,6 +19,7 @@ extern {
     fn PHYSFS_write(file : *const RawFile, buffer : *const ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
 }
 ///Possible ways to open a file.
+#[derive(Copy)]
 pub enum Mode
 {
     ///Append to the end of the file.
