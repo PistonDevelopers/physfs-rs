@@ -1,5 +1,3 @@
-#![feature(globs)]
-
 extern crate physfs;
 
 use std::thread::Thread;
