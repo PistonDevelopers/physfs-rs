@@ -141,3 +141,23 @@ impl <'f> Reader for File<'f> {
         }
     }
 }
+
+impl <'f> Writer for File<'f> {
+    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
+        let len: usize = buf.len();
+
+        // buf might be bigger than i32
+        if (len as u64) > (u32::MAX as u64) {
+            panic!("buffer size overflows u32");
+        }
+        let len: u32 = len as u32;
+
+        File::write(self, buf, 1, len)
+        .map(|_| ())
+        .map_err(|err| IoError {
+            kind: OtherIoError,
+            desc: "physf write error",
+            detail: Some(err)
+        })
+    }
+}
