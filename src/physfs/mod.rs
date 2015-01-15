@@ -1,5 +1,5 @@
 use std::sync::{StaticMutex, MUTEX_INIT};
-use std::ffi::c_str_to_bytes;
+use std::ffi::{CString, c_str_to_bytes};
 
 ///For locking physfs operations
 static mut PHYSFS_LOCK : StaticMutex = MUTEX_INIT;
@@ -56,7 +56,7 @@ impl PhysFSContext {
 
         let args = ::std::os::args();
         let arg0 : *const ::libc::c_char = if args.len() > 0 {
-            args[0].as_slice().as_ptr() as *const ::libc::c_char
+            CString::from_slice(args[0].as_bytes()).as_ptr()
         } else {
             ::std::ptr::null()
         };
@@ -91,11 +91,13 @@ impl PhysFSContext {
     ///mount_point is the location in the tree to mount it to.
     pub fn mount(&self, new_dir : String, mount_point : String, append_to_path : bool) -> Result<(), String>
     {
+        let c_new_dir = CString::from_slice(new_dir.as_bytes());
+        let c_mount_point = CString::from_slice(mount_point.as_bytes());
         match unsafe {
             let _g = PHYSFS_LOCK.lock();
             PHYSFS_mount(
-                new_dir.as_slice().as_ptr() as *const ::libc::c_char,
-                mount_point.as_slice().as_ptr() as *const ::libc::c_char,
+                c_new_dir.as_ptr(),
+                c_mount_point.as_ptr(),
                 append_to_path as ::libc::c_int
             )
         } {
