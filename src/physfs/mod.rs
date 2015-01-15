@@ -1,10 +1,10 @@
 use std::sync::{StaticMutex, MUTEX_INIT};
-use std::c_str::CString;
+use std::ffi::c_str_to_bytes;
 
 ///For locking physfs operations
 static mut PHYSFS_LOCK : StaticMutex = MUTEX_INIT;
 ///Keep track of the number of global contexts.
-static mut NUM_CONTEXTS : uint = 0;
+static mut NUM_CONTEXTS : usize = 0;
 ///File operations
 pub mod file;
 
@@ -116,10 +116,11 @@ impl PhysFSContext {
             return "".to_string();
         }
 
-        let cstr = unsafe{ CString::new(ptr, false) };
+        let bytes: &[u8] = unsafe { c_str_to_bytes(&ptr) };
+
         let mut err = String::new();
 
-        let mut it = cstr.as_bytes_no_nul().iter().map(|&x| x as u8 as char);
+        let mut it = bytes.iter().map(|&x| x as u8 as char);
         for c in it {
             err.push(c);
         }
