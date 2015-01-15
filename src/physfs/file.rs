@@ -73,7 +73,7 @@ impl <'f> File<'f> {
     }
 
     ///Reads from a file.
-    pub fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+    fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
         let ret = unsafe {
             let _g = PHYSFS_LOCK.lock();
             PHYSFS_read(
@@ -93,7 +93,7 @@ impl <'f> File<'f> {
     ///Writes to a file.
     ///This code performs no safety checks to ensure
     ///that the buffer is the correct length.
-    pub fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+    fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
         let ret = unsafe {
             let _g = PHYSFS_LOCK.lock();
             PHYSFS_write(
