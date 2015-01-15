@@ -20,7 +20,7 @@ fn read_file_from_directory() {
         Err(msg) => panic!(msg)
     };
 
-    let mut bytes = [0u8, 32];
+    let mut bytes = [0u8; 32];
     let buf = bytes.as_mut_slice();
 
     match file.read(buf, 1, 32) {
