@@ -18,7 +18,7 @@ fn test_create_physfs_context() {
 #[test]
 fn test_threaded_physfs_contexts() {
     let threads: Vec<_> = range(0is, 10).map(|_| {
-        Thread::spawn(move || {
+        Thread::scoped(move || {
             let con = PhysFSContext::new().unwrap();
             let _ = con;
             assert!(PhysFSContext::is_init())
