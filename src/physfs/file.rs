@@ -1,5 +1,8 @@
 use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
+use std::io::{IoResult, IoError, standard_error};
+use std::io::IoErrorKind::{EndOfFile,OtherIoError};
+use std::u32;
 
 #[link(name = "physfs")]
 extern {
@@ -109,6 +112,32 @@ impl <'f> Drop for File<'f> {
     fn drop(&mut self) {
         match self.close() {
             _ => {}
+        }
+    }
+}
+
+impl <'f> Reader for File<'f> {
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+        let len: usize = buf.len();
+
+        // buf might be bigger than i32
+        if (len as u64) > (u32::MAX as u64) {
+            panic!("buffer size overflows u32");
+        }
+        let len: u32 = len as u32;
+
+        let result = File::read(self, buf, 1, len)
+            .map(|n_read| n_read as usize)
+            .map_err(|err| IoError {
+                kind: OtherIoError,
+                desc: "physf read error",
+                detail: Some(err)
+            });
+
+        if result == Ok(0) && self.eof() {
+            Err(standard_error(EndOfFile))
+        } else {
+            result
         }
     }
 }
