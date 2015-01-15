@@ -18,6 +18,9 @@ extern {
 
     //Number of bytes written on success, -1 on failure.
     fn PHYSFS_write(file : *const RawFile, buffer : *const ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
+
+    //nonzero if EOF, zero if not.
+    fn PHYSFS_eof(file : *const RawFile) -> ::libc::c_int;
 }
 ///Possible ways to open a file.
 #[derive(Copy)]
@@ -103,6 +106,16 @@ impl <'f> File<'f> {
             -1 => Err(PhysFSContext::get_last_error()),
             _ => Ok(ret as u64)
         }
+    }
+
+    ///Checks whether eof is reached or not.
+    pub fn eof(&self) -> bool {
+        let ret = unsafe {
+            let _g = PHYSFS_LOCK.lock();
+            PHYSFS_eof(self.raw)
+        };
+
+        ret != 0
     }
 }
 #[unsafe_destructor]

@@ -20,6 +20,10 @@ extern {
     fn PHYSFS_getLastError() -> *const ::libc::c_char;
     //nonzero if success, zero if error
     fn PHYSFS_mount(new_dir : *const ::libc::c_char, mount_point : *const ::libc::c_char, append_to_path : ::libc::c_int) -> ::libc::c_int;
+    //nonzero if success, zero if error.
+    fn PHYSFS_setWriteDir(write_dir : *const ::libc::c_char) -> ::libc::c_int;
+    //nonzero on success, zero on error.
+    fn PHYSFS_mkdir(dir_name : *const ::libc::c_char) -> ::libc::c_int;
 }
 ///The access point for PhysFS function calls.
 ///
@@ -127,6 +131,36 @@ impl PhysFSContext {
             err.push(c);
         }
         err
+    }
+
+    ///Sets a new write directory.
+    ///This method will fail if the current write dir
+    ///still has open files in it.
+    pub fn set_write_dir(&self, write_dir: &str) -> Result<(), String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let write_dir = CString::from_slice(write_dir.as_bytes());
+        let ret = unsafe {
+            PHYSFS_setWriteDir(write_dir.as_ptr())
+        };
+
+        match ret {
+            0 => Err(PhysFSContext::get_last_error()),
+            _ => Ok(())
+        }
+    }
+
+    ///Creates a new dir relative to the write_dir.
+    pub fn mkdir(dir_name: &str) -> Result<(), String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let c_dir_name = CString::from_slice(dir_name.as_bytes());
+        let ret = unsafe {
+            PHYSFS_mkdir(c_dir_name.as_ptr())
+        };
+
+        match ret {
+            0 => Err(PhysFSContext::get_last_error()),
+            _ => Ok(())
+        }
     }
 }
 
