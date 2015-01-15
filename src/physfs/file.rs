@@ -69,8 +69,8 @@ impl <'f> File<'f> {
 
     ///Reads from a file.
     pub fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
         let ret = unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_read(
                 self.raw, 
                 buf.as_ptr() as *mut ::libc::c_void,
@@ -89,8 +89,8 @@ impl <'f> File<'f> {
     ///This code performs no safety checks to ensure
     ///that the buffer is the correct length.
     pub fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
         let ret = unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_write(
                 self.raw,
                 buf.as_ptr() as *const ::libc::c_void,
