@@ -1,5 +1,6 @@
 use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
+use std::ffi::CString;
 
 #[link(name = "physfs")]
 extern {
@@ -46,11 +47,11 @@ impl <'f> File<'f> {
     ///Opens a file with a specific mode.
     pub fn open<'g>(context : &'g PhysFSContext, filename : String, mode : Mode) -> Result<File<'g>, String> {
         let _g = unsafe{ PHYSFS_LOCK.lock()};
-        let as_c_str : *const ::libc::c_char = filename.as_slice().as_ptr() as *const ::libc::c_char;
+        let c_filename = CString::from_slice(filename.as_bytes());
         let raw = match mode {
-            Mode::Append => unsafe{ PHYSFS_openAppend(as_c_str) },
-            Mode::Read => unsafe{ PHYSFS_openRead(as_c_str) },
-            Mode::Write => unsafe{ PHYSFS_openWrite(as_c_str) }
+            Mode::Append => unsafe{ PHYSFS_openAppend(c_filename.as_ptr()) },
+            Mode::Read => unsafe{ PHYSFS_openRead(c_filename.as_ptr()) },
+            Mode::Write => unsafe{ PHYSFS_openWrite(c_filename.as_ptr()) }
         };
         if raw.is_null() {Err(PhysFSContext::get_last_error())}
         else {Ok(File{raw : raw, mode : mode, context : context})}
@@ -68,8 +69,8 @@ impl <'f> File<'f> {
 
     ///Reads from a file.
     pub fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
         let ret = unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_read(
                 self.raw, 
                 buf.as_ptr() as *mut ::libc::c_void,
@@ -88,8 +89,8 @@ impl <'f> File<'f> {
     ///This code performs no safety checks to ensure
     ///that the buffer is the correct length.
     pub fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
         let ret = unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_write(
                 self.raw,
                 buf.as_ptr() as *const ::libc::c_void,
