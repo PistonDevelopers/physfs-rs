@@ -4,7 +4,7 @@ use std::c_str::CString;
 ///For locking physfs operations
 static mut PHYSFS_LOCK : StaticMutex = MUTEX_INIT;
 ///Keep track of the number of global contexts.
-static mut NUM_CONTEXTS : uint = 0;
+static mut NUM_CONTEXTS : usize = 0;
 ///File operations
 pub mod file;
 
