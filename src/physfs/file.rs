@@ -1,5 +1,8 @@
 use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
+use std::io::{IoResult, IoError, standard_error};
+use std::io::IoErrorKind::{EndOfFile,OtherIoError};
+use std::u32;
 
 #[link(name = "physfs")]
 extern {
@@ -17,6 +20,9 @@ extern {
 
     //Number of bytes written on success, -1 on failure.
     fn PHYSFS_write(file : *const RawFile, buffer : *const ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
+
+    //nonzero if EOF, zero if not.
+    fn PHYSFS_eof(file : *const RawFile) -> ::libc::c_int;
 }
 ///Possible ways to open a file.
 #[derive(Copy)]
@@ -67,7 +73,7 @@ impl <'f> File<'f> {
     }
 
     ///Reads from a file.
-    pub fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+    fn read(&self, buf : &mut [u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
         let ret = unsafe {
             let _g = PHYSFS_LOCK.lock();
             PHYSFS_read(
@@ -87,7 +93,7 @@ impl <'f> File<'f> {
     ///Writes to a file.
     ///This code performs no safety checks to ensure
     ///that the buffer is the correct length.
-    pub fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
+    fn write(&self, buf : &[u8], obj_size : u32, obj_count : u32) -> Result<u64, String> {
         let ret = unsafe {
             let _g = PHYSFS_LOCK.lock();
             PHYSFS_write(
@@ -103,6 +109,16 @@ impl <'f> File<'f> {
             _ => Ok(ret as u64)
         }
     }
+
+    ///Checks whether eof is reached or not.
+    pub fn eof(&self) -> bool {
+        let ret = unsafe {
+            let _g = PHYSFS_LOCK.lock();
+            PHYSFS_eof(self.raw)
+        };
+
+        ret != 0
+    }
 }
 #[unsafe_destructor]
 impl <'f> Drop for File<'f> {
@@ -110,5 +126,51 @@ impl <'f> Drop for File<'f> {
         match self.close() {
             _ => {}
         }
+    }
+}
+
+impl <'f> Reader for File<'f> {
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+        let len: usize = buf.len();
+
+        // buf might be bigger than i32
+        if (len as u64) > (u32::MAX as u64) {
+            panic!("buffer size overflows u32");
+        }
+        let len: u32 = len as u32;
+
+        let result = File::read(self, buf, 1, len)
+            .map(|n_read| n_read as usize)
+            .map_err(|err| IoError {
+                kind: OtherIoError,
+                desc: "physf read error",
+                detail: Some(err)
+            });
+
+        if result == Ok(0) && self.eof() {
+            Err(standard_error(EndOfFile))
+        } else {
+            result
+        }
+    }
+}
+
+impl <'f> Writer for File<'f> {
+    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
+        let len: usize = buf.len();
+
+        // buf might be bigger than i32
+        if (len as u64) > (u32::MAX as u64) {
+            panic!("buffer size overflows u32");
+        }
+        let len: u32 = len as u32;
+
+        File::write(self, buf, 1, len)
+        .map(|_| ())
+        .map_err(|err| IoError {
+            kind: OtherIoError,
+            desc: "physf write error",
+            detail: Some(err)
+        })
     }
 }
