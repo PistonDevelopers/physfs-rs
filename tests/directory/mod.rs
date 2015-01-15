@@ -15,24 +15,12 @@ fn read_file_from_directory() {
         _ => {}
     }
 
-    let file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
+    let mut file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
         Ok(f) => f,
         Err(msg) => panic!(msg)
     };
 
-    let mut bytes = [0u8; 32];
-    let buf = bytes.as_mut_slice();
-
-    match file.read(buf, 1, 32) {
-        Err(msg) => panic!(msg),
-        _ => {}
-    }
-
-    let mut msg = String::new();
-    for byte in buf.iter() {
-        if *byte == 0 { break }
-        msg.push(*byte as char);
-    }
+    let msg = file.read_to_string().unwrap_or_else(|err| panic!(err));
 
     assert!(msg.as_slice() == "Read from me.");
 }
