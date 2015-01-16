@@ -61,7 +61,7 @@ pub struct File<'f> {
 impl <'f> File<'f> {
     /// Opens a file with a specific mode.
     pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> Result<File<'g>, String> {
-        let _g = unsafe{ PHYSFS_LOCK.lock()};
+        let _g = PHYSFS_LOCK.lock();
         let c_filename = CString::from_slice(filename.as_bytes());
         let raw = match mode {
             Mode::Append => unsafe{ PHYSFS_openAppend(c_filename.as_ptr()) },
@@ -74,8 +74,8 @@ impl <'f> File<'f> {
 
     /// Closes a file handle.
     fn close(&self) -> Result<(), String> {
+        let _g = PHYSFS_LOCK.lock();
         match unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_close(self.raw)
         } {
             0 => Err(PhysFSContext::get_last_error()),
@@ -85,7 +85,7 @@ impl <'f> File<'f> {
 
     /// Reads from a file.
     pub fn read(&self, buf: &mut [u8], obj_size: u32, obj_count: u32) -> Result<u64, String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_read(
                 self.raw,
@@ -105,7 +105,7 @@ impl <'f> File<'f> {
     /// This code performs no safety checks to ensure
     /// that the buffer is the correct length.
     pub fn write(&self, buf: &[u8], obj_size: u32, obj_count: u32) -> Result<u64, String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_write(
                 self.raw,
@@ -123,7 +123,7 @@ impl <'f> File<'f> {
 
     /// Determines current position within a file
     pub fn tell(&self) -> Result<u64, String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_tell(self.raw)
         };
@@ -136,7 +136,7 @@ impl <'f> File<'f> {
 
     /// Seek to a new position within a file
     pub fn seek(&self, pos: u64) -> Result<(), String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_seek(
                 self.raw,
@@ -152,7 +152,7 @@ impl <'f> File<'f> {
 
     /// Checks whether eof is reached or not.
     pub fn eof(&self) -> bool {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_eof(self.raw)
         };
@@ -162,7 +162,7 @@ impl <'f> File<'f> {
 
     /// Determine length of file, if possible
     pub fn len(&self) -> Result<u64, String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let len = unsafe { PHYSFS_fileLength(self.raw) };
 
         if len >= 0 {

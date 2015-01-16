@@ -3,7 +3,7 @@ use std::ffi::{CString, c_str_to_bytes};
 use libc::{c_int, c_char};
 
 /// For locking physfs operations
-static mut PHYSFS_LOCK: StaticMutex = MUTEX_INIT;
+static PHYSFS_LOCK: StaticMutex = MUTEX_INIT;
 /// Keep track of the number of global contexts.
 static mut NUM_CONTEXTS: usize = 0;
 /// File operations
@@ -41,7 +41,7 @@ impl PhysFSContext {
     /// Creates a new PhysFS context.
     pub fn new() -> Result<PhysFSContext, String> {
         // grab the lock before doing any of this.
-        let _g = unsafe{ PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
 
         let con = PhysFSContext;
         match PhysFSContext::init() {
@@ -62,22 +62,18 @@ impl PhysFSContext {
     fn init() -> Result<(), String> {
         // Initializing multiple times throws an error. So let's not!
         if PhysFSContext::is_init() { return Ok(()); }
-
+    
         let args = ::std::os::args();
-        let arg0: *const c_char = if args.len() > 0 {
-            CString::from_slice(args[0].as_bytes()).as_ptr()
-        } else {
-            ::std::ptr::null()
-        };
-
-        let ret = unsafe {
-            PHYSFS_init(arg0)
-        };
+        let default_arg0 = &"".to_string();
+        let arg0 = args.first().unwrap_or(default_arg0);
+        let c_arg0 = CString::from_slice(arg0.as_bytes());
+        let ret = unsafe { PHYSFS_init(c_arg0.as_ptr()) };
 
         match ret {
             0 => Err(PhysFSContext::get_last_error()),
             _ => Ok(())
         }
+
     }
 
     /// Checks if PhysFS is initialized
@@ -100,10 +96,10 @@ impl PhysFSContext {
     /// mount_point is the location in the tree to mount it to.
     pub fn mount(&self, new_dir: String, mount_point: String, append_to_path: bool) -> Result<(), String>
     {
+        let _g = PHYSFS_LOCK.lock();
         let c_new_dir = CString::from_slice(new_dir.as_bytes());
         let c_mount_point = CString::from_slice(mount_point.as_bytes());
         match unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_mount(
                 c_new_dir.as_ptr(),
                 c_mount_point.as_ptr(),
@@ -142,7 +138,7 @@ impl PhysFSContext {
     /// This method will fail if the current write dir
     /// still has open files in it.
     pub fn set_write_dir(&self, write_dir: &str) -> Result<(), String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let write_dir = CString::from_slice(write_dir.as_bytes());
         let ret = unsafe {
             PHYSFS_setWriteDir(write_dir.as_ptr())
@@ -155,8 +151,8 @@ impl PhysFSContext {
     }
 
     /// Creates a new dir relative to the write_dir.
-    pub fn mkdir(dir_name: &str) -> Result<(), String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+    pub fn mkdir(&self, dir_name: &str) -> Result<(), String> {
+        let _g = PHYSFS_LOCK.lock();
         let c_dir_name = CString::from_slice(dir_name.as_bytes());
         let ret = unsafe {
             PHYSFS_mkdir(c_dir_name.as_ptr())
@@ -183,7 +179,7 @@ impl PhysFSContext {
 
     /// Checks if given path is a directory
     pub fn is_directory(&self, path: &str) -> Result<(), String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let c_path = CString::from_slice(path.as_bytes());
         let ret = unsafe { PHYSFS_isDirectory(c_path.as_ptr()) };
 
@@ -198,7 +194,7 @@ impl PhysFSContext {
 impl Drop for PhysFSContext {
     fn drop(&mut self) {
         // grab the lock before doing any of this!
-        let _g = unsafe{ PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
 
         // decrement NUM_CONTEXTS
         unsafe {
