@@ -19,6 +19,12 @@ extern {
     //Number of bytes written on success, -1 on failure.
     fn PHYSFS_write(file : *const RawFile, buffer : *const ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
 
+    //Current position in file, -1 on failure.
+    fn PHYSFS_tell(file : *const RawFile) -> PHYSFS_sint64;
+
+    // Seek to position in file; nonzero on succss, zero on error.
+    fn PHYSFS_seek(file : *const RawFile, pos : PHYSFS_uint64) -> ::libc::c_int;
+
     //nonzero if EOF, zero if not.
     fn PHYSFS_eof(file : *const RawFile) -> ::libc::c_int;
 }
@@ -59,6 +65,7 @@ impl <'f> File<'f> {
         if raw.is_null() {Err(PhysFSContext::get_last_error())}
         else {Ok(File{raw : raw, mode : mode, context : context})}
     }
+
     ///Closes a file handle.
     fn close(&self) -> Result<(), String> {
         match unsafe {
@@ -75,7 +82,7 @@ impl <'f> File<'f> {
         let _g = unsafe { PHYSFS_LOCK.lock() };
         let ret = unsafe {
             PHYSFS_read(
-                self.raw, 
+                self.raw,
                 buf.as_ptr() as *mut ::libc::c_void,
                 obj_size as PHYSFS_uint32,
                 obj_count as PHYSFS_uint32
@@ -108,16 +115,46 @@ impl <'f> File<'f> {
         }
     }
 
+    ///Determines current position within a file
+    pub fn tell(&self) -> Result<u64, String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let ret = unsafe {
+            PHYSFS_tell(self.raw)
+        };
+
+        match ret {
+            -1 => Err(PhysFSContext::get_last_error()),
+            _ => Ok(ret as u64)
+        }
+    }
+
+    ///Seek to a new position within a file
+    pub fn seek(&self, pos : u64) -> Result<(), String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let ret = unsafe {
+            PHYSFS_seek(
+                self.raw,
+                pos as PHYSFS_uint64
+            )
+        };
+
+        match ret {
+            -1 => Err(PhysFSContext::get_last_error()),
+            _ => Ok(())
+        }
+    }
+
     ///Checks whether eof is reached or not.
     pub fn eof(&self) -> bool {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
         let ret = unsafe {
-            let _g = PHYSFS_LOCK.lock();
             PHYSFS_eof(self.raw)
         };
 
         ret != 0
     }
 }
+
 #[unsafe_destructor]
 impl <'f> Drop for File<'f> {
     fn drop(&mut self) {
@@ -126,3 +163,4 @@ impl <'f> Drop for File<'f> {
         }
     }
 }
+
