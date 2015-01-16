@@ -32,6 +32,7 @@ extern {
     // Determine file size; returns -1 if impossible
     fn PHYSFS_fileLength(file: *const RawFile) -> PHYSFS_sint64;
 }
+
 /// Possible ways to open a file.
 #[derive(Copy)]
 pub enum Mode
@@ -43,6 +44,7 @@ pub enum Mode
     /// Write to the file, overwriting previous data.
     Write,
 }
+
 /// A wrapper for the PHYSFS_File type.
 #[repr(C)]
 struct RawFile {
@@ -179,4 +181,3 @@ impl <'f> Drop for File<'f> {
         }
     }
 }
-
