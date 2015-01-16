@@ -26,6 +26,8 @@ extern {
     fn PHYSFS_mkdir(dir_name : *const ::libc::c_char) -> ::libc::c_int;
     //Checks if a given path exists; returns nonzero if true
     fn PHYSFS_exists(path: *const ::libc::c_char) -> ::libc::c_int;
+    //Checks if a given path is a directory; returns nonzero if true
+    fn PHYSFS_isDirectory(path: *const ::libc::c_char) -> ::libc::c_int;
 }
 ///The access point for PhysFS function calls.
 ///
@@ -170,6 +172,19 @@ impl PhysFSContext {
         let _g = unsafe { PHYSFS_LOCK.lock() };
         let c_path = CString::from_slice(path.as_bytes());
         let ret = unsafe { PHYSFS_exists(c_path.as_ptr()) };
+
+        if ret == 0 {
+            Err(PhysFSContext::get_last_error())
+        } else {
+            Ok(())
+        }
+    }
+
+    ///Checks if given path is a directory
+    pub fn is_directory(&self, path: &str) -> Result<(), String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let c_path = CString::from_slice(path.as_bytes());
+        let ret = unsafe { PHYSFS_isDirectory(c_path.as_ptr()) };
 
         if ret == 0 {
             Err(PhysFSContext::get_last_error())
