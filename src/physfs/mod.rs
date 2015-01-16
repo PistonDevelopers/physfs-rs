@@ -1,5 +1,6 @@
 use std::sync::{StaticMutex, MUTEX_INIT};
 use std::ffi::{CString, c_str_to_bytes};
+use libc::{c_int, c_char};
 
 /// For locking physfs operations
 static mut PHYSFS_LOCK : StaticMutex = MUTEX_INIT;
@@ -11,23 +12,23 @@ pub mod file;
 #[link(name = "physfs")]
 extern {
     // nonzero on success, zero on error.
-    fn PHYSFS_init(arg0 : *const ::libc::c_char) -> ::libc::c_int;
+    fn PHYSFS_init(arg0 : *const c_char) -> c_int;
     // nonzero if initialized, zero if not.
-    fn PHYSFS_isInit() -> ::libc::c_int;
+    fn PHYSFS_isInit() -> c_int;
     // nonzero if success, zero if error.
-    fn PHYSFS_deinit() -> ::libc::c_int;
+    fn PHYSFS_deinit() -> c_int;
     // string if success, NULL if error.
-    fn PHYSFS_getLastError() -> *const ::libc::c_char;
+    fn PHYSFS_getLastError() -> *const c_char;
     // nonzero if success, zero if error
-    fn PHYSFS_mount(new_dir : *const ::libc::c_char, mount_point : *const ::libc::c_char, append_to_path : ::libc::c_int) -> ::libc::c_int;
+    fn PHYSFS_mount(new_dir : *const c_char, mount_point : *const c_char, append_to_path : c_int) -> c_int;
     // nonzero if success, zero if error.
-    fn PHYSFS_setWriteDir(write_dir : *const ::libc::c_char) -> ::libc::c_int;
+    fn PHYSFS_setWriteDir(write_dir : *const c_char) -> c_int;
     // nonzero on success, zero on error.
-    fn PHYSFS_mkdir(dir_name : *const ::libc::c_char) -> ::libc::c_int;
+    fn PHYSFS_mkdir(dir_name : *const c_char) -> c_int;
     // Checks if a given path exists; returns nonzero if true
-    fn PHYSFS_exists(path: *const ::libc::c_char) -> ::libc::c_int;
+    fn PHYSFS_exists(path: *const c_char) -> c_int;
     // Checks if a given path is a directory; returns nonzero if true
-    fn PHYSFS_isDirectory(path: *const ::libc::c_char) -> ::libc::c_int;
+    fn PHYSFS_isDirectory(path: *const c_char) -> c_int;
 }
 /// The access point for PhysFS function calls.
 ///
@@ -63,7 +64,7 @@ impl PhysFSContext {
         if PhysFSContext::is_init() { return Ok(()); }
 
         let args = ::std::os::args();
-        let arg0 : *const ::libc::c_char = if args.len() > 0 {
+        let arg0 : *const c_char = if args.len() > 0 {
             CString::from_slice(args[0].as_bytes()).as_ptr()
         } else {
             ::std::ptr::null()
@@ -106,7 +107,7 @@ impl PhysFSContext {
             PHYSFS_mount(
                 c_new_dir.as_ptr(),
                 c_mount_point.as_ptr(),
-                append_to_path as ::libc::c_int
+                append_to_path as c_int
             )
         } {
             0 => Err(PhysFSContext::get_last_error()),
@@ -119,7 +120,7 @@ impl PhysFSContext {
     /// This message may be localized, so do not expect it to 
     /// match a specific string of characters.
     pub fn get_last_error() -> String {
-        let ptr : *const ::libc::c_char = unsafe {
+        let ptr : *const c_char = unsafe {
             PHYSFS_getLastError() 
         };
         if ptr.is_null() {

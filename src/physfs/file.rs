@@ -1,32 +1,33 @@
 use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
 use std::ffi::CString;
+use libc::{c_int, c_char, c_void};
 
 #[link(name = "physfs")]
 extern {
     // valid filehandle on success, NULL on failure
-    fn PHYSFS_openAppend(filename : *const ::libc::c_char) -> *const RawFile;
-    fn PHYSFS_openRead(filename : *const ::libc::c_char) -> *const RawFile;
-    fn PHYSFS_openWrite(filename : *const ::libc::c_char) -> *const RawFile;
+    fn PHYSFS_openAppend(filename : *const c_char) -> *const RawFile;
+    fn PHYSFS_openRead(filename : *const c_char) -> *const RawFile;
+    fn PHYSFS_openWrite(filename : *const c_char) -> *const RawFile;
 
     // nonzero on success, 0 on failure (and the handle stays open)
     // The docs make it sound like failure is rare.
-    fn PHYSFS_close(file : *const RawFile) -> ::libc::c_int;
+    fn PHYSFS_close(file : *const RawFile) -> c_int;
 
     // Number of bytes read on success, -1 on failure.
-    fn PHYSFS_read(file : *const RawFile, buffer : *mut ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
+    fn PHYSFS_read(file : *const RawFile, buffer : *mut c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
 
     // Number of bytes written on success, -1 on failure.
-    fn PHYSFS_write(file : *const RawFile, buffer : *const ::libc::c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
+    fn PHYSFS_write(file : *const RawFile, buffer : *const c_void, obj_size : PHYSFS_uint32, obj_count : PHYSFS_uint32) -> PHYSFS_sint64;
 
     // Current position in file, -1 on failure.
     fn PHYSFS_tell(file : *const RawFile) -> PHYSFS_sint64;
 
     // Seek to position in file; nonzero on succss, zero on error.
-    fn PHYSFS_seek(file : *const RawFile, pos : PHYSFS_uint64) -> ::libc::c_int;
+    fn PHYSFS_seek(file : *const RawFile, pos : PHYSFS_uint64) -> c_int;
 
     // nonzero if EOF, zero if not.
-    fn PHYSFS_eof(file : *const RawFile) -> ::libc::c_int;
+    fn PHYSFS_eof(file : *const RawFile) -> c_int;
 
     // Determine file size; returns -1 if impossible
     fn PHYSFS_fileLength(file: *const RawFile) -> PHYSFS_sint64;
@@ -45,7 +46,7 @@ pub enum Mode
 /// A wrapper for the PHYSFS_File type.
 #[repr(C)]
 struct RawFile {
-    opaque : *const ::libc::c_void,
+    opaque : *const c_void,
 }
 
 /// A file handle.
@@ -86,7 +87,7 @@ impl <'f> File<'f> {
         let ret = unsafe {
             PHYSFS_read(
                 self.raw,
-                buf.as_ptr() as *mut ::libc::c_void,
+                buf.as_ptr() as *mut c_void,
                 obj_size as PHYSFS_uint32,
                 obj_count as PHYSFS_uint32
             )
@@ -106,7 +107,7 @@ impl <'f> File<'f> {
         let ret = unsafe {
             PHYSFS_write(
                 self.raw,
-                buf.as_ptr() as *const ::libc::c_void,
+                buf.as_ptr() as *const c_void,
                 obj_size as PHYSFS_uint32,
                 obj_count as PHYSFS_uint32
             )
