@@ -3,16 +3,16 @@ use std::ffi::{CString, c_str_to_bytes};
 use libc::{c_int, c_char};
 
 /// For locking physfs operations
-static mut PHYSFS_LOCK : StaticMutex = MUTEX_INIT;
+static mut PHYSFS_LOCK: StaticMutex = MUTEX_INIT;
 /// Keep track of the number of global contexts.
-static mut NUM_CONTEXTS : usize = 0;
+static mut NUM_CONTEXTS: usize = 0;
 /// File operations
 pub mod file;
 
 #[link(name = "physfs")]
 extern {
     // nonzero on success, zero on error.
-    fn PHYSFS_init(arg0 : *const c_char) -> c_int;
+    fn PHYSFS_init(arg0: *const c_char) -> c_int;
     // nonzero if initialized, zero if not.
     fn PHYSFS_isInit() -> c_int;
     // nonzero if success, zero if error.
@@ -20,11 +20,11 @@ extern {
     // string if success, NULL if error.
     fn PHYSFS_getLastError() -> *const c_char;
     // nonzero if success, zero if error
-    fn PHYSFS_mount(new_dir : *const c_char, mount_point : *const c_char, append_to_path : c_int) -> c_int;
+    fn PHYSFS_mount(new_dir: *const c_char, mount_point: *const c_char, append_to_path: c_int) -> c_int;
     // nonzero if success, zero if error.
-    fn PHYSFS_setWriteDir(write_dir : *const c_char) -> c_int;
+    fn PHYSFS_setWriteDir(write_dir: *const c_char) -> c_int;
     // nonzero on success, zero on error.
-    fn PHYSFS_mkdir(dir_name : *const c_char) -> c_int;
+    fn PHYSFS_mkdir(dir_name: *const c_char) -> c_int;
     // Checks if a given path exists; returns nonzero if true
     fn PHYSFS_exists(path: *const c_char) -> c_int;
     // Checks if a given path is a directory; returns nonzero if true
@@ -64,7 +64,7 @@ impl PhysFSContext {
         if PhysFSContext::is_init() { return Ok(()); }
 
         let args = ::std::os::args();
-        let arg0 : *const c_char = if args.len() > 0 {
+        let arg0: *const c_char = if args.len() > 0 {
             CString::from_slice(args[0].as_bytes()).as_ptr()
         } else {
             ::std::ptr::null()
@@ -98,7 +98,7 @@ impl PhysFSContext {
     }
     /// Adds an archive or directory to the search path.
     /// mount_point is the location in the tree to mount it to.
-    pub fn mount(&self, new_dir : String, mount_point : String, append_to_path : bool) -> Result<(), String>
+    pub fn mount(&self, new_dir: String, mount_point: String, append_to_path: bool) -> Result<(), String>
     {
         let c_new_dir = CString::from_slice(new_dir.as_bytes());
         let c_mount_point = CString::from_slice(mount_point.as_bytes());
@@ -120,7 +120,7 @@ impl PhysFSContext {
     /// This message may be localized, so do not expect it to 
     /// match a specific string of characters.
     pub fn get_last_error() -> String {
-        let ptr : *const c_char = unsafe {
+        let ptr: *const c_char = unsafe {
             PHYSFS_getLastError() 
         };
         if ptr.is_null() {
