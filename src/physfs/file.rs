@@ -27,6 +27,9 @@ extern {
 
     //nonzero if EOF, zero if not.
     fn PHYSFS_eof(file : *const RawFile) -> ::libc::c_int;
+
+    //Determine file size; returns -1 if impossible
+    fn PHYSFS_fileLength(file: *const RawFile) -> PHYSFS_sint64;
 }
 ///Possible ways to open a file.
 #[derive(Copy)]
@@ -152,6 +155,18 @@ impl <'f> File<'f> {
         };
 
         ret != 0
+    }
+
+    ///Determine length of file, if possible
+    pub fn len(&self) -> Result<u64, String> {
+        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let len = unsafe { PHYSFS_fileLength(self.raw) };
+
+        if len >= 0 {
+            Ok(len as u64)
+        } else {
+            Err(PhysFSContext::get_last_error())
+        }
     }
 }
 
