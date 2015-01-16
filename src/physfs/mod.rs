@@ -151,7 +151,7 @@ impl PhysFSContext {
     }
 
     /// Creates a new dir relative to the write_dir.
-    pub fn mkdir(dir_name: &str) -> Result<(), String> {
+    pub fn mkdir(&self, dir_name: &str) -> Result<(), String> {
         let _g = PHYSFS_LOCK.lock();
         let c_dir_name = CString::from_slice(dir_name.as_bytes());
         let ret = unsafe {
