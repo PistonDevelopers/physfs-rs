@@ -12,7 +12,7 @@ pub type PHYSFS_uint64 = ::libc::c_ulonglong;
 #[cfg(target_pointer_width = "64")]
 pub type PHYSFS_sint64 = ::libc::c_longlong;
 
-//PhysFS defines the 64-bit types to 32 bits on 32-bit systems.
+// PhysFS defines the 64-bit types to 32 bits on 32-bit systems.
 #[cfg(target_pointer_width = "32")]
 pub type PHYSFS_uint64 = ::libc::c_uint;
 #[cfg(target_pointer_width = "32")]
