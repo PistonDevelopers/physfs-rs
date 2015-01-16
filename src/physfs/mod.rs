@@ -62,22 +62,18 @@ impl PhysFSContext {
     fn init() -> Result<(), String> {
         // Initializing multiple times throws an error. So let's not!
         if PhysFSContext::is_init() { return Ok(()); }
-
+    
         let args = ::std::os::args();
-        let arg0: *const c_char = if args.len() > 0 {
-            CString::from_slice(args[0].as_bytes()).as_ptr()
-        } else {
-            ::std::ptr::null()
-        };
-
-        let ret = unsafe {
-            PHYSFS_init(arg0)
-        };
+        let default_arg0 = &"".to_string();
+        let arg0 = args.first().unwrap_or(default_arg0);
+        let c_arg0 = CString::from_slice(arg0.as_bytes());
+        let ret = unsafe { PHYSFS_init(c_arg0.as_ptr()) };
 
         match ret {
             0 => Err(PhysFSContext::get_last_error()),
             _ => Ok(())
         }
+
     }
 
     /// Checks if PhysFS is initialized
