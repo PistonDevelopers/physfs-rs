@@ -1,4 +1,4 @@
-//!PhysFS bindings for Rust
+//! PhysFS bindings for Rust
 #![crate_name = "physfs"]
 #![crate_type = "lib"]
 #![license = "zlib"]
@@ -11,7 +11,7 @@ extern crate libc;
 pub use physfs::*;
 pub use physfs::file::*;
 
-///PhysFS bindings
+/// PhysFS bindings
 mod physfs;
-///Definitions for the PhysFS primitives
+/// Definitions for the PhysFS primitives
 mod primitives;

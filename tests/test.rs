@@ -5,7 +5,7 @@ use physfs::*;
 
 mod directory;
 
-//from project_root
+// from project_root
 static PATH_TO_HERE : &'static str = "tests/";
 
 #[test]
