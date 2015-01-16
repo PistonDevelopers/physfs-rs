@@ -1,8 +1,10 @@
 use physfs::PhysFSContext;
 use physfs::file;
+use super::TEST_LOCK;
 
 #[test]
 fn read_file_from_directory() {
+    let _g = TEST_LOCK.lock();
     let con = match PhysFSContext::new() {
         Err(msg) => panic!(msg),
         Ok(con) => con
