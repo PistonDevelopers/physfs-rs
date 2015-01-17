@@ -117,7 +117,7 @@ impl <'f> File<'f> {
 }
 
 impl <'f> Reader for File<'f> {
-    ///Reads from a file
+    /// Reads from a file
     fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
         let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
@@ -174,6 +174,17 @@ impl <'f> Seek for File<'f> {
 
     /// Seek to a new position within a file
     fn seek(&mut self, pos: i64, style: SeekStyle) -> IoResult<()> {
+        match style {
+            SeekStyle::SeekSet => {},
+            _ => {
+                return Err(IoError {
+                    kind: IoErrorKind::OtherIoError,
+                    desc: "PhysicsFS Error",
+                    detail: Some("Only std::io::SeekStyle::SeekSet is supported.".to_string()),
+                })
+            }
+        }
+
         let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_seek(
