@@ -2,6 +2,7 @@ use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
 use std::ffi::CString;
 use libc::{c_int, c_char, c_void};
+use std::io::{Reader, Writer, Seek, SeekStyle, IoResult, IoError, IoErrorKind};
 
 #[link(name = "physfs")]
 extern {
@@ -56,6 +57,14 @@ pub struct File<'f> {
     raw: *const RawFile,
     mode: Mode,
     context: &'f PhysFSContext,
+}
+
+fn physfs_error_as_ioerror() -> IoError {
+    IoError {
+        kind: IoErrorKind::OtherIoError,
+        desc: "PhysicsFS Error",
+        detail: Some(PhysFSContext::get_last_error()),
+    }
 }
 
 impl <'f> File<'f> {
@@ -121,35 +130,6 @@ impl <'f> File<'f> {
         }
     }
 
-    /// Determines current position within a file
-    pub fn tell(&self) -> Result<u64, String> {
-        let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
-            PHYSFS_tell(self.raw)
-        };
-
-        match ret {
-            -1 => Err(PhysFSContext::get_last_error()),
-            _ => Ok(ret as u64)
-        }
-    }
-
-    /// Seek to a new position within a file
-    pub fn seek(&self, pos: u64) -> Result<(), String> {
-        let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
-            PHYSFS_seek(
-                self.raw,
-                pos as PHYSFS_uint64
-            )
-        };
-
-        match ret {
-            -1 => Err(PhysFSContext::get_last_error()),
-            _ => Ok(())
-        }
-    }
-
     /// Checks whether eof is reached or not.
     pub fn eof(&self) -> bool {
         let _g = PHYSFS_LOCK.lock();
@@ -169,6 +149,37 @@ impl <'f> File<'f> {
             Ok(len as u64)
         } else {
             Err(PhysFSContext::get_last_error())
+        }
+    }
+}
+
+impl <'f> Seek for File<'f> {
+    /// Determines current position within a file
+    fn tell(&self) -> IoResult<u64> {
+        let _g = PHYSFS_LOCK.lock();
+        let ret = unsafe {
+            PHYSFS_tell(self.raw)
+        };
+
+        match ret {
+            -1 => Err(physfs_error_as_ioerror()),
+            _ => Ok(ret as u64)
+        }
+    }
+
+    /// Seek to a new position within a file
+    fn seek(&mut self, pos: i64, style: SeekStyle) -> IoResult<()> {
+        let _g = PHYSFS_LOCK.lock();
+        let ret = unsafe {
+            PHYSFS_seek(
+                self.raw,
+                pos as PHYSFS_uint64
+            )
+        };
+
+        match ret {
+            -1 => Err(physfs_error_as_ioerror()),
+            _ => Ok(())
         }
     }
 }
