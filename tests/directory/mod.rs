@@ -17,7 +17,7 @@ fn read_file_from_directory() {
         _ => {}
     }
 
-    let file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
+    let mut file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
         Ok(f) => f,
         Err(msg) => panic!(msg)
     };
@@ -25,7 +25,7 @@ fn read_file_from_directory() {
     let mut bytes = [0u8; 32];
     let buf = bytes.as_mut_slice();
 
-    match file.read(buf, 1, 32) {
+    match file.read(buf) {
         Err(msg) => panic!(msg),
         _ => {}
     }
@@ -38,3 +38,4 @@ fn read_file_from_directory() {
 
     assert!(msg.as_slice() == "Read from me.");
 }
+
