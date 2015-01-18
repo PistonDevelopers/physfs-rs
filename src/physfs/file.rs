@@ -70,7 +70,7 @@ fn physfs_error_as_ioerror() -> IoError {
 
 impl <'f> File<'f> {
     /// Opens a file with a specific mode.
-    pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> Result<File<'g>, String> {
+    pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> IoResult<File<'g>> {
         let _g = PHYSFS_LOCK.lock();
         let c_filename = CString::from_slice(filename.as_bytes());
         let raw = match mode {
@@ -78,17 +78,22 @@ impl <'f> File<'f> {
             Mode::Read => unsafe{ PHYSFS_openRead(c_filename.as_ptr()) },
             Mode::Write => unsafe{ PHYSFS_openWrite(c_filename.as_ptr()) }
         };
-        if raw.is_null() {Err(PhysFSContext::get_last_error())}
-        else {Ok(File{raw: raw, mode: mode, context: context})}
+
+        if raw.is_null() {
+            Err(physfs_error_as_ioerror())
+        }
+        else {
+            Ok(File{raw: raw, mode: mode, context: context})
+        }
     }
 
     /// Closes a file handle.
-    fn close(&self) -> Result<(), String> {
+    fn close(&self) -> IoResult<()> {
         let _g = PHYSFS_LOCK.lock();
         match unsafe {
             PHYSFS_close(self.raw)
         } {
-            0 => Err(PhysFSContext::get_last_error()),
+            0 => Err(physfs_error_as_ioerror()),
             _ => Ok(())
         }
     }
@@ -104,14 +109,14 @@ impl <'f> File<'f> {
     }
 
     /// Determine length of file, if possible
-    pub fn len(&self) -> Result<u64, String> {
+    pub fn len(&self) -> IoResult<u64> {
         let _g = PHYSFS_LOCK.lock();
         let len = unsafe { PHYSFS_fileLength(self.raw) };
 
         if len >= 0 {
             Ok(len as u64)
         } else {
-            Err(PhysFSContext::get_last_error())
+            Err(physfs_error_as_ioerror())
         }
     }
 }
@@ -174,22 +179,27 @@ impl <'f> Seek for File<'f> {
 
     /// Seek to a new position within a file
     fn seek(&mut self, pos: i64, style: SeekStyle) -> IoResult<()> {
-        match style {
-            SeekStyle::SeekSet => {},
-            _ => {
-                return Err(IoError {
-                    kind: IoErrorKind::OtherIoError,
-                    desc: "PhysicsFS Error",
-                    detail: Some("Only std::io::SeekStyle::SeekSet is supported.".to_string()),
-                })
-            }
-        }
+        let seek_pos = match style {
+            SeekStyle::SeekSet => { pos },
+            SeekStyle::SeekEnd => {
+                match self.len() {
+                    Ok(len) => { pos + (len as i64) },
+                    Err(e) => { return Err(e) },
+                }
+            },
+            SeekStyle::SeekCur => {
+                match self.tell() {
+                    Ok(curr_pos) => { pos + (curr_pos as i64) },
+                    Err(e) => { return Err(e) },
+                }
+            },
+        };
 
         let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_seek(
                 self.raw,
-                pos as PHYSFS_uint64
+                seek_pos as PHYSFS_uint64
             )
         };
 
