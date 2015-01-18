@@ -180,18 +180,14 @@ impl <'f> Seek for File<'f> {
     /// Seek to a new position within a file
     fn seek(&mut self, pos: i64, style: SeekStyle) -> IoResult<()> {
         let seek_pos = match style {
-            SeekStyle::SeekSet => { pos },
+            SeekStyle::SeekSet => pos,
             SeekStyle::SeekEnd => {
-                match self.len() {
-                    Ok(len) => { pos + (len as i64) },
-                    Err(e) => { return Err(e) },
-                }
+                let len = try!(self.len());
+                pos + len as i64
             },
             SeekStyle::SeekCur => {
-                match self.tell() {
-                    Ok(curr_pos) => { pos + (curr_pos as i64) },
-                    Err(e) => { return Err(e) },
-                }
+                let curr_pos = try!(self.tell());
+                pos + curr_pos as i64
             },
         };
 
