@@ -2,7 +2,7 @@ use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
 use std::ffi::CString;
 use libc::{c_int, c_char, c_void};
-use std::io::{Reader, Writer, Seek, SeekStyle, IoResult, IoError, IoErrorKind};
+use std::io::{Read, Write, Seek, SeekFrom, Result, Error, ErrorKind};
 use std::mem;
 
 #[link(name = "physfs")]
@@ -22,11 +22,14 @@ extern {
     // Number of bytes written on success, -1 on failure.
     fn PHYSFS_write(file: *const RawFile, buffer: *const c_void, obj_size: PHYSFS_uint32, obj_count: PHYSFS_uint32) -> PHYSFS_sint64;
 
-    // Current position in file, -1 on failure.
-    fn PHYSFS_tell(file: *const RawFile) -> PHYSFS_sint64;
+    // Flush buffered file; no-op for unbuffered files.
+    fn PHYSFS_flush(file: *const RawFile) -> c_int;
 
     // Seek to position in file; nonzero on succss, zero on error.
     fn PHYSFS_seek(file: *const RawFile, pos: PHYSFS_uint64) -> c_int;
+
+    // Current position in file, -1 on failure.
+    fn PHYSFS_tell(file: *const RawFile) -> PHYSFS_sint64;
 
     // nonzero if EOF, zero if not.
     fn PHYSFS_eof(file: *const RawFile) -> c_int;
@@ -60,17 +63,15 @@ pub struct File<'f> {
     context: &'f PhysFSContext,
 }
 
-fn physfs_error_as_ioerror() -> IoError {
-    IoError {
-        kind: IoErrorKind::OtherIoError,
-        desc: "PhysicsFS Error",
-        detail: Some(PhysFSContext::get_last_error()),
-    }
+fn physfs_error_as_io_error() -> Error {
+    Error::new(ErrorKind::Other,
+               "PhysicsFS Error",
+               Some(PhysFSContext::get_last_error()))
 }
 
 impl <'f> File<'f> {
     /// Opens a file with a specific mode.
-    pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> IoResult<File<'g>> {
+    pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> Result<File<'g>> {
         let _g = PHYSFS_LOCK.lock();
         let c_filename = CString::from_slice(filename.as_bytes());
         let raw = match mode {
@@ -80,7 +81,7 @@ impl <'f> File<'f> {
         };
 
         if raw.is_null() {
-            Err(physfs_error_as_ioerror())
+            Err(physfs_error_as_io_error())
         }
         else {
             Ok(File{raw: raw, mode: mode, context: context})
@@ -88,12 +89,12 @@ impl <'f> File<'f> {
     }
 
     /// Closes a file handle.
-    fn close(&self) -> IoResult<()> {
+    fn close(&self) -> Result<()> {
         let _g = PHYSFS_LOCK.lock();
         match unsafe {
             PHYSFS_close(self.raw)
         } {
-            0 => Err(physfs_error_as_ioerror()),
+            0 => Err(physfs_error_as_io_error()),
             _ => Ok(())
         }
     }
@@ -109,21 +110,34 @@ impl <'f> File<'f> {
     }
 
     /// Determine length of file, if possible
-    pub fn len(&self) -> IoResult<u64> {
+    pub fn len(&self) -> Result<u64> {
         let _g = PHYSFS_LOCK.lock();
         let len = unsafe { PHYSFS_fileLength(self.raw) };
 
         if len >= 0 {
             Ok(len as u64)
         } else {
-            Err(physfs_error_as_ioerror())
+            Err(physfs_error_as_io_error())
+        }
+    }
+
+    /// Determines current position within a file
+    pub fn tell(&self) -> Result<u64> {
+        let _g = PHYSFS_LOCK.lock();
+        let ret = unsafe {
+            PHYSFS_tell(self.raw)
+        };
+
+        match ret {
+            -1 => Err(physfs_error_as_io_error()),
+            _ => Ok(ret as u64)
         }
     }
 }
 
-impl <'f> Reader for File<'f> {
+impl <'f> Read for File<'f> {
     /// Reads from a file
-    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_read(
@@ -135,17 +149,17 @@ impl <'f> Reader for File<'f> {
         };
 
         match ret {
-            -1 => Err(physfs_error_as_ioerror()),
+            -1 => Err(physfs_error_as_io_error()),
             _ => Ok(ret as usize)
         }
     }
 }
 
-impl <'f> Writer for File<'f> {
+impl <'f> Write for File<'f> {
     /// Writes to a file.
     /// This code performs no safety checks to ensure
     /// that the buffer is the correct length.
-    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
         let _g = PHYSFS_LOCK.lock();
         let ret = unsafe {
             PHYSFS_write(
@@ -157,52 +171,53 @@ impl <'f> Writer for File<'f> {
         };
 
         match ret {
-            n if n < (buf.len() as PHYSFS_sint64)  => Err(physfs_error_as_ioerror()),
+            -1 => Err(physfs_error_as_io_error()),
+            _ => Ok(ret as usize)
+        }
+    }
+
+    /// Flushes a file if buffered; no-op if unbuffered.
+    fn flush(&mut self) -> Result<()> {
+        let _g = PHYSFS_LOCK.lock();
+        let ret = unsafe {
+            PHYSFS_flush(self.raw)
+        };
+
+        match ret {
+            0 => Err(physfs_error_as_io_error()),
             _ => Ok(())
         }
     }
 }
 
 impl <'f> Seek for File<'f> {
-    /// Determines current position within a file
-    fn tell(&self) -> IoResult<u64> {
-        let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
-            PHYSFS_tell(self.raw)
-        };
-
-        match ret {
-            -1 => Err(physfs_error_as_ioerror()),
-            _ => Ok(ret as u64)
-        }
-    }
-
     /// Seek to a new position within a file
-    fn seek(&mut self, pos: i64, style: SeekStyle) -> IoResult<()> {
-        let seek_pos = match style {
-            SeekStyle::SeekSet => pos,
-            SeekStyle::SeekEnd => {
+    fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
+        let seek_pos = match pos {
+            SeekFrom::Start(n) => n as i64,
+            SeekFrom::End(n) => {
                 let len = try!(self.len());
-                pos + len as i64
+                n + len as i64
             },
-            SeekStyle::SeekCur => {
+            SeekFrom::Current(n) => {
                 let curr_pos = try!(self.tell());
-                pos + curr_pos as i64
+                n + curr_pos as i64
             },
         };
 
         let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
+        let result = unsafe {
             PHYSFS_seek(
                 self.raw,
                 seek_pos as PHYSFS_uint64
             )
         };
 
-        match ret {
-            -1 => Err(physfs_error_as_ioerror()),
-            _ => Ok(())
+        if result == -1 {
+            return Err(physfs_error_as_io_error());
         }
+
+        self.tell()
     }
 }
 
