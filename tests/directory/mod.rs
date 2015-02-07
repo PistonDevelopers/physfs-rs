@@ -1,6 +1,7 @@
 use physfs::PhysFSContext;
 use physfs::file;
 use super::TEST_LOCK;
+use std::io::Read;
 
 #[test]
 fn read_file_from_directory() {
