@@ -1,5 +1,6 @@
 #![feature(core)]
 #![feature(io)]
+#![feature(path)]
 #![feature(std_misc)]
 
 extern crate physfs;
