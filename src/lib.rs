@@ -7,6 +7,7 @@
 #![feature(env)]
 #![feature(io)]
 #![feature(libc)]
+#![feature(path)]
 #![feature(std_misc)]
 #![feature(unsafe_destructor)]
 extern crate libc;
