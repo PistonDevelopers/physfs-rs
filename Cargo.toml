@@ -9,3 +9,4 @@ authors = [ "Robert Habermeier" ]
 
 name = "physfs"
 path = "./src/lib.rs"
+
