@@ -1,5 +1,5 @@
-use std::sync::{StaticMutex, MUTEX_INIT};
 use std::ffi::{CString, c_str_to_bytes};
+use std::sync::{StaticMutex, MUTEX_INIT};
 use libc::{c_int, c_char};
 
 /// For locking physfs operations
@@ -62,10 +62,10 @@ impl PhysFSContext {
     fn init() -> Result<(), String> {
         // Initializing multiple times throws an error. So let's not!
         if PhysFSContext::is_init() { return Ok(()); }
-    
-        let args = ::std::os::args();
-        let default_arg0 = &"".to_string();
-        let arg0 = args.first().unwrap_or(default_arg0);
+
+        let mut args = ::std::env::args();
+        let default_arg0 = "".to_string();
+        let arg0 = args.next().unwrap_or(default_arg0);
         let c_arg0 = CString::from_slice(arg0.as_bytes());
         let ret = unsafe { PHYSFS_init(c_arg0.as_ptr()) };
 
@@ -73,7 +73,6 @@ impl PhysFSContext {
             0 => Err(PhysFSContext::get_last_error()),
             _ => Ok(())
         }
-
     }
 
     /// Checks if PhysFS is initialized
@@ -127,7 +126,7 @@ impl PhysFSContext {
 
         let mut err = String::new();
 
-        let mut it = bytes.iter().map(|&x| x as u8 as char);
+        let it = bytes.iter().map(|&x| x as u8 as char);
         for c in it {
             err.push(c);
         }
@@ -166,7 +165,7 @@ impl PhysFSContext {
 
     /// Checks if given path exists
     pub fn exists(&self, path: &str) -> Result<(), String> {
-        let _g = unsafe { PHYSFS_LOCK.lock() };
+        let _g = PHYSFS_LOCK.lock();
         let c_path = CString::from_slice(path.as_bytes());
         let ret = unsafe { PHYSFS_exists(c_path.as_ptr()) };
 
