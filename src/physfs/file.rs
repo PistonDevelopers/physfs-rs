@@ -57,6 +57,7 @@ struct RawFile {
 }
 
 /// A file handle.
+#[allow(dead_code)]
 pub struct File<'f> {
     raw: *const RawFile,
     mode: Mode,
@@ -229,3 +230,4 @@ impl <'f> Drop for File<'f> {
         }
     }
 }
+

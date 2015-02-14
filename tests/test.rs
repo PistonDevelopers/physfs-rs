@@ -1,3 +1,7 @@
+#![feature(core)]
+#![feature(io)]
+#![feature(std_misc)]
+
 extern crate physfs;
 
 use std::thread::Thread;
@@ -11,7 +15,6 @@ static TEST_LOCK: StaticMutex = MUTEX_INIT;
 
 // from project_root
 static PATH_TO_HERE: &'static str = "tests/";
-
 
 #[test]
 fn test_create_physfs_context() {
@@ -36,3 +39,4 @@ fn test_threaded_physfs_contexts() {
         let _ = thread.join();
     }
 }
+

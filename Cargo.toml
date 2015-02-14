@@ -2,9 +2,11 @@
 
 name = "physfs-rs"
 version = "0.1.0"
+license = "zlib"
 authors = [ "Robert Habermeier" ]
 
 [lib]
 
 name = "physfs"
 path = "./src/lib.rs"
+
