@@ -1,9 +1,10 @@
+use std::ffi::CString;
+use std::io::{Read, Write, Seek, SeekFrom, Result};
+use std::mem;
+use libc::{c_int, c_char, c_void};
 use primitives::*;
 use super::{PhysFSContext, PHYSFS_LOCK};
-use std::ffi::CString;
-use libc::{c_int, c_char, c_void};
-use std::io::{Read, Write, Seek, SeekFrom, Result, Error, ErrorKind};
-use std::mem;
+use super::util::physfs_error_as_io_error;
 
 #[link(name = "physfs")]
 extern {
@@ -62,12 +63,6 @@ pub struct File<'f> {
     raw: *const RawFile,
     mode: Mode,
     context: &'f PhysFSContext,
-}
-
-fn physfs_error_as_io_error() -> Error {
-    Error::new(ErrorKind::Other,
-               "PhysicsFS Error",
-               Some(PhysFSContext::get_last_error()))
 }
 
 impl <'f> File<'f> {
