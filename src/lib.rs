@@ -3,7 +3,6 @@
 #![crate_type = "lib"]
 
 #![deny(missing_docs)]
-#![feature(core)]
 #![feature(env)]
 #![feature(io)]
 #![feature(libc)]

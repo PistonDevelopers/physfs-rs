@@ -1,26 +1,24 @@
 use std::io::Read;
 use std::path::Path;
 
-use physfs::PhysFSContext;
-use physfs::file;
-use super::TEST_LOCK;
+use physfs;
+use physfs::{File, Mode};
 
 #[test]
 fn read_file_from_directory() {
-    let _g = TEST_LOCK.lock();
-    let con = match PhysFSContext::new() {
+    match physfs::init() {
         Err(e) => panic!(e),
-        Ok(con) => con
+        Ok(_) => {}
     };
 
-    assert!(PhysFSContext::is_init());
+    assert!(physfs::is_init());
 
-    match con.mount(Path::new(super::PATH_TO_HERE), "/test/".to_string(), true) {
+    match physfs::mount(Path::new(super::PATH_TO_HERE), "/test/".to_string(), true) {
         Err(e) => panic!(e),
         _ => {}
     }
 
-    let mut file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
+    let mut file = match File::open("/test/directory/read.txt".to_string(), Mode::Read) {
         Ok(f) => f,
         Err(e) => panic!(e)
     };
