@@ -88,7 +88,7 @@ impl File {
     }
 
     /// Closes a file handle.
-    fn close(&self) -> Result<()> {
+    pub fn close(&self) -> Result<()> {
         let _guard = self.mutex.lock().unwrap();
 
         let ret = unsafe { PHYSFS_close(self.raw) };
@@ -191,7 +191,6 @@ impl Write for File {
 impl Seek for File {
     /// Seek to a new position within a file
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
-
         let seek_pos = match pos {
             SeekFrom::Start(n) => n as i64,
             SeekFrom::End(n) => {

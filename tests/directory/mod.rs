@@ -3,9 +3,12 @@ use std::path::Path;
 
 use physfs;
 use physfs::{File, Mode};
+use super::TEST_LOCK;
 
 #[test]
 fn read_file_from_directory() {
+    let _g = TEST_LOCK.lock();
+
     match physfs::init() {
         Err(e) => panic!(e),
         Ok(_) => {}
@@ -38,5 +41,14 @@ fn read_file_from_directory() {
     }
 
     assert!(contents.as_slice() == "Read from me.");
+
+    match file.close() {
+        Err(e) => panic!(e),
+        Ok(_) => {}
+    };
+
+    physfs::deinit();
+
+    assert!(!physfs::is_init());
 }
 
