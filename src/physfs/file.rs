@@ -1,9 +1,9 @@
+use libc::{c_int, c_char, c_void};
+use primitives::*;
 use std::ffi::CString;
 use std::io::{Read, Write, Seek, SeekFrom, Result};
 use std::mem;
-use libc::{c_int, c_char, c_void};
-use primitives::*;
-use super::{PhysFSContext, PHYSFS_LOCK};
+use std::sync::Mutex;
 use super::util::physfs_error_as_io_error;
 
 #[link(name = "physfs")]
@@ -59,17 +59,17 @@ struct RawFile {
 
 /// A file handle.
 #[allow(dead_code)]
-pub struct File<'f> {
+pub struct File {
     raw: *const RawFile,
     mode: Mode,
-    context: &'f PhysFSContext,
+    mutex: Mutex<u32>,
 }
 
-impl <'f> File<'f> {
+impl File {
     /// Opens a file with a specific mode.
-    pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> Result<File<'g>> {
-        let _g = PHYSFS_LOCK.lock();
-        let c_filename = CString::from_slice(filename.as_bytes());
+    pub fn open(filename: String, mode: Mode) -> Result<File> {
+        let c_filename = CString::new(filename.as_bytes()).unwrap();
+
         let raw = match mode {
             Mode::Append => unsafe{ PHYSFS_openAppend(c_filename.as_ptr()) },
             Mode::Read => unsafe{ PHYSFS_openRead(c_filename.as_ptr()) },
@@ -78,18 +78,22 @@ impl <'f> File<'f> {
 
         if raw.is_null() {
             Err(physfs_error_as_io_error())
-        }
-        else {
-            Ok(File{raw: raw, mode: mode, context: context})
+        } else {
+            Ok(File{
+                raw: raw,
+                mode: mode,
+                mutex: Mutex::new(0)
+            })
         }
     }
 
     /// Closes a file handle.
-    fn close(&self) -> Result<()> {
-        let _g = PHYSFS_LOCK.lock();
-        match unsafe {
-            PHYSFS_close(self.raw)
-        } {
+    pub fn close(&self) -> Result<()> {
+        let _guard = self.mutex.lock().unwrap();
+
+        let ret = unsafe { PHYSFS_close(self.raw) };
+
+        match ret {
             0 => Err(physfs_error_as_io_error()),
             _ => Ok(())
         }
@@ -97,17 +101,15 @@ impl <'f> File<'f> {
 
     /// Checks whether eof is reached or not.
     pub fn eof(&self) -> bool {
-        let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
-            PHYSFS_eof(self.raw)
-        };
+        let _guard = self.mutex.lock().unwrap();
 
-        ret != 0
+        unsafe { PHYSFS_eof(self.raw) != 0 }
     }
 
     /// Determine length of file, if possible
     pub fn len(&self) -> Result<u64> {
-        let _g = PHYSFS_LOCK.lock();
+        let _guard = self.mutex.lock().unwrap();
+
         let len = unsafe { PHYSFS_fileLength(self.raw) };
 
         if len >= 0 {
@@ -119,10 +121,9 @@ impl <'f> File<'f> {
 
     /// Determines current position within a file
     pub fn tell(&self) -> Result<u64> {
-        let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
-            PHYSFS_tell(self.raw)
-        };
+        let _guard = self.mutex.lock().unwrap();
+
+        let ret = unsafe { PHYSFS_tell(self.raw) };
 
         match ret {
             -1 => Err(physfs_error_as_io_error()),
@@ -131,10 +132,11 @@ impl <'f> File<'f> {
     }
 }
 
-impl <'f> Read for File<'f> {
+impl Read for File {
     /// Reads from a file
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        let _g = PHYSFS_LOCK.lock();
+        let _guard = self.mutex.lock().unwrap();
+
         let ret = unsafe {
             PHYSFS_read(
                 self.raw,
@@ -151,12 +153,13 @@ impl <'f> Read for File<'f> {
     }
 }
 
-impl <'f> Write for File<'f> {
+impl Write for File {
     /// Writes to a file.
     /// This code performs no safety checks to ensure
     /// that the buffer is the correct length.
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        let _g = PHYSFS_LOCK.lock();
+        let _guard = self.mutex.lock().unwrap();
+
         let ret = unsafe {
             PHYSFS_write(
                 self.raw,
@@ -174,10 +177,9 @@ impl <'f> Write for File<'f> {
 
     /// Flushes a file if buffered; no-op if unbuffered.
     fn flush(&mut self) -> Result<()> {
-        let _g = PHYSFS_LOCK.lock();
-        let ret = unsafe {
-            PHYSFS_flush(self.raw)
-        };
+        let _guard = self.mutex.lock().unwrap();
+
+        let ret = unsafe { PHYSFS_flush(self.raw) };
 
         match ret {
             0 => Err(physfs_error_as_io_error()),
@@ -186,7 +188,7 @@ impl <'f> Write for File<'f> {
     }
 }
 
-impl <'f> Seek for File<'f> {
+impl Seek for File {
     /// Seek to a new position within a file
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
         let seek_pos = match pos {
@@ -201,16 +203,19 @@ impl <'f> Seek for File<'f> {
             },
         };
 
-        let _g = PHYSFS_LOCK.lock();
-        let result = unsafe {
-            PHYSFS_seek(
-                self.raw,
-                seek_pos as PHYSFS_uint64
-            )
-        };
+        {
+            let _guard = self.mutex.lock().unwrap();
 
-        if result == -1 {
-            return Err(physfs_error_as_io_error());
+            let ret = unsafe {
+                PHYSFS_seek(
+                    self.raw,
+                    seek_pos as PHYSFS_uint64
+                )
+            };
+
+            if ret == -1 {
+                return Err(physfs_error_as_io_error());
+            }
         }
 
         self.tell()
@@ -218,7 +223,7 @@ impl <'f> Seek for File<'f> {
 }
 
 #[unsafe_destructor]
-impl <'f> Drop for File<'f> {
+impl Drop for File {
     fn drop(&mut self) {
         match self.close() {
             _ => {}

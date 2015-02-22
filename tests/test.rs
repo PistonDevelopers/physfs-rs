@@ -5,8 +5,6 @@
 
 extern crate physfs;
 
-use std::thread::Thread;
-use physfs::*;
 use std::sync::{StaticMutex, MUTEX_INIT};
 
 mod directory;
@@ -18,26 +16,18 @@ static TEST_LOCK: StaticMutex = MUTEX_INIT;
 static PATH_TO_HERE: &'static str = "tests/";
 
 #[test]
-fn test_create_physfs_context() {
+fn test_init_physfs() {
     let _g = TEST_LOCK.lock();
-    let con = PhysFSContext::new().unwrap();
-    let _ = con;
-    assert!(PhysFSContext::is_init());
-}
 
-#[test]
-fn test_threaded_physfs_contexts() {
-    let _g = TEST_LOCK.lock();
-    let threads: Vec<_> = range(0is, 10).map(|_| {
-        Thread::scoped(move || {
-            let con = PhysFSContext::new().unwrap();
-            let _ = con;
-            assert!(PhysFSContext::is_init())
-        })
-    }).collect();
+    match physfs::init() {
+        Err(e) => panic!(e),
+        Ok(_) => {}
+    };
 
-    for thread in threads.into_iter() {
-        let _ = thread.join();
-    }
+    assert!(physfs::is_init());
+
+    physfs::deinit();
+
+    assert!(!physfs::is_init());
 }
 
