@@ -17,7 +17,7 @@ fn read_file_from_directory() {
 
     match con.mount(Path::new(super::PATH_TO_HERE), "/test/".to_string(), true) {
         Err(e) => panic!(e),
-        _ => {}
+        _ => ()
     }
 
     let mut file = match file::File::open(&con, "/test/directory/read.txt".to_string(), file::Mode::Read) {
@@ -25,20 +25,19 @@ fn read_file_from_directory() {
         Err(e) => panic!(e)
     };
 
-    let mut bytes = [0u8; 32];
-    let buf = bytes.as_mut_slice();
+    let buf = &mut [0; 32];
 
     match file.read(buf) {
         Err(e) => panic!(e),
-        _ => {}
+        _ => ()
     }
 
     let mut contents = String::new();
-    for byte in buf.iter() {
-        if *byte == 0 { break }
-        contents.push(*byte as char);
+    for &mut byte in buf {
+        if byte == 0 { break }
+        contents.push(byte as char);
     }
 
-    assert!(contents.as_slice() == "Read from me.");
+    assert!(contents == "Read from me.");
 }
 
