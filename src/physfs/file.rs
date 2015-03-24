@@ -1,9 +1,9 @@
 use std::ffi::CString;
-use std::io::{Read, Write, Seek, SeekFrom, Result};
+use std::io::{ Read, Write, Seek, SeekFrom, Result };
 use std::mem;
-use libc::{c_int, c_char, c_void};
+use libc::{ c_int, c_char, c_void };
 use primitives::*;
-use super::{PhysFSContext, PHYSFS_LOCK};
+use super::{ PhysFSContext, PHYSFS_LOCK };
 use super::util::physfs_error_as_io_error;
 
 #[link(name = "physfs")]
@@ -18,10 +18,12 @@ extern {
     fn PHYSFS_close(file: *const RawFile) -> c_int;
 
     // Number of bytes read on success, -1 on failure.
-    fn PHYSFS_read(file: *const RawFile, buffer: *mut c_void, obj_size: PHYSFS_uint32, obj_count: PHYSFS_uint32) -> PHYSFS_sint64;
+    fn PHYSFS_read(file: *const RawFile, buffer: *mut c_void,
+                   obj_size: PHYSFS_uint32, obj_count: PHYSFS_uint32) -> PHYSFS_sint64;
 
     // Number of bytes written on success, -1 on failure.
-    fn PHYSFS_write(file: *const RawFile, buffer: *const c_void, obj_size: PHYSFS_uint32, obj_count: PHYSFS_uint32) -> PHYSFS_sint64;
+    fn PHYSFS_write(file: *const RawFile, buffer: *const c_void,
+                    obj_size: PHYSFS_uint32, obj_count: PHYSFS_uint32) -> PHYSFS_sint64;
 
     // Flush buffered file; no-op for unbuffered files.
     fn PHYSFS_flush(file: *const RawFile) -> c_int;
@@ -41,8 +43,7 @@ extern {
 
 /// Possible ways to open a file.
 #[derive(Copy)]
-pub enum Mode
-{
+pub enum Mode {
     /// Append to the end of the file.
     Append,
     /// Read from the file.
@@ -65,16 +66,16 @@ pub struct File<'f> {
     context: &'f PhysFSContext,
 }
 
-impl <'f> File<'f> {
+impl<'f> File<'f> {
     /// Opens a file with a specific mode.
     pub fn open<'g>(context: &'g PhysFSContext, filename: String, mode: Mode) -> Result<File<'g>> {
         let _g = PHYSFS_LOCK.lock();
-        let c_filename = CString::from_slice(filename.as_bytes());
-        let raw = match mode {
-            Mode::Append => unsafe{ PHYSFS_openAppend(c_filename.as_ptr()) },
-            Mode::Read => unsafe{ PHYSFS_openRead(c_filename.as_ptr()) },
-            Mode::Write => unsafe{ PHYSFS_openWrite(c_filename.as_ptr()) }
-        };
+        let c_filename = try!(CString::new(filename));
+        let raw = unsafe { match mode {
+            Mode::Append => PHYSFS_openAppend(c_filename.as_ptr()),
+            Mode::Read => PHYSFS_openRead(c_filename.as_ptr()),
+            Mode::Write => PHYSFS_openWrite(c_filename.as_ptr())
+        }};
 
         if raw.is_null() {
             Err(physfs_error_as_io_error())
@@ -131,7 +132,7 @@ impl <'f> File<'f> {
     }
 }
 
-impl <'f> Read for File<'f> {
+impl<'f> Read for File<'f> {
     /// Reads from a file
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let _g = PHYSFS_LOCK.lock();
@@ -151,7 +152,7 @@ impl <'f> Read for File<'f> {
     }
 }
 
-impl <'f> Write for File<'f> {
+impl<'f> Write for File<'f> {
     /// Writes to a file.
     /// This code performs no safety checks to ensure
     /// that the buffer is the correct length.
@@ -186,7 +187,7 @@ impl <'f> Write for File<'f> {
     }
 }
 
-impl <'f> Seek for File<'f> {
+impl<'f> Seek for File<'f> {
     /// Seek to a new position within a file
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
         let seek_pos = match pos {
@@ -194,11 +195,11 @@ impl <'f> Seek for File<'f> {
             SeekFrom::End(n) => {
                 let len = try!(self.len());
                 n + len as i64
-            },
+            }
             SeekFrom::Current(n) => {
                 let curr_pos = try!(self.tell());
                 n + curr_pos as i64
-            },
+            }
         };
 
         let _g = PHYSFS_LOCK.lock();
@@ -218,11 +219,8 @@ impl <'f> Seek for File<'f> {
 }
 
 #[unsafe_destructor]
-impl <'f> Drop for File<'f> {
+impl<'f> Drop for File<'f> {
     fn drop(&mut self) {
-        match self.close() {
-            _ => {}
-        }
+        let _ = self.close();
     }
 }
-

@@ -8,5 +8,7 @@ authors = [ "Robert Habermeier" ]
 [lib]
 
 name = "physfs"
-path = "./src/lib.rs"
 
+[dependencies]
+
+libc = "0.1"
