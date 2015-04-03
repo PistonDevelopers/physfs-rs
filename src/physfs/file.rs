@@ -218,7 +218,6 @@ impl<'f> Seek for File<'f> {
     }
 }
 
-#[unsafe_destructor]
 impl<'f> Drop for File<'f> {
     fn drop(&mut self) {
         let _ = self.close();
