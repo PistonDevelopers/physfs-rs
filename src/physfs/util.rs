@@ -3,6 +3,5 @@ use super::PhysFSContext;
 
 pub fn physfs_error_as_io_error() -> Error {
     Error::new(ErrorKind::Other,
-               "PhysicsFS Error",
-               PhysFSContext::get_last_error())
+               &format!("PhysicsFS Error: `{}`", PhysFSContext::get_last_error())[..])
 }
