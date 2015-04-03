@@ -2,7 +2,7 @@
 
 #![deny(missing_docs)]
 
-#![feature(io, std_misc, unsafe_destructor)]
+#![feature(convert, std_misc, unsafe_destructor)]
 
 extern crate libc;
 

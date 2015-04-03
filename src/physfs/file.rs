@@ -42,7 +42,7 @@ extern {
 }
 
 /// Possible ways to open a file.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum Mode {
     /// Append to the end of the file.
     Append,
