@@ -1,6 +1,5 @@
-use std::ffi::{ CString, CStr };
+use std::ffi::{ CString, CStr, OsStr };
 use std::io::Result;
-use std::path::Path;
 use std::sync::{ StaticMutex, MUTEX_INIT };
 use libc::{ c_int, c_char };
 
@@ -98,10 +97,10 @@ impl PhysFSContext {
     /// Adds an archive or directory to the search path.
     /// mount_point is the location in the tree to mount it to.
     pub fn mount<P>(&self, new_dir: P, mount_point: String, append_to_path: bool) -> Result<()>
-        where P: AsRef<Path>
+        where P: AsRef<OsStr>
     {
         let _g = PHYSFS_LOCK.lock();
-        let c_new_dir = new_dir.as_ref().as_os_str().to_cstring().unwrap();
+        let c_new_dir = new_dir.as_ref().to_cstring().unwrap();
         let c_mount_point = try!(CString::new(mount_point));
         match unsafe {
             PHYSFS_mount(
@@ -135,10 +134,10 @@ impl PhysFSContext {
     /// This method will fail if the current write dir
     /// still has open files in it.
     pub fn set_write_dir<P>(&self, write_dir: P) -> Result<()>
-        where P: AsRef<Path>
+        where P: AsRef<OsStr>
     {
         let _g = PHYSFS_LOCK.lock();
-        let write_dir = write_dir.as_ref().as_os_str().to_cstring().unwrap();
+        let write_dir = write_dir.as_ref().to_cstring().unwrap();
         let ret = unsafe {
             PHYSFS_setWriteDir(write_dir.as_ptr())
         };

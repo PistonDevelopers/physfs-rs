@@ -1,8 +1,7 @@
 use std::io::Read;
 use std::path::Path;
 
-use physfs::PhysFSContext;
-use physfs::file;
+use physfs::{ PhysFSContext, file };
 use super::TEST_LOCK;
 
 #[test]
@@ -15,7 +14,7 @@ fn read_file_from_directory() {
 
     assert!(PhysFSContext::is_init());
 
-    match con.mount(Path::new(super::PATH_TO_HERE), "/test/".to_string(), true) {
+    match con.mount(&Path::new(super::PATH_TO_HERE), "/test/".to_string(), true) {
         Err(e) => panic!(e),
         _ => ()
     }

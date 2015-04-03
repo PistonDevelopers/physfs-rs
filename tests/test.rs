@@ -3,7 +3,7 @@
 extern crate physfs;
 
 use std::thread;
-use physfs::*;
+use physfs::PhysFSContext;
 use std::sync::{ StaticMutex, MUTEX_INIT };
 
 mod directory;
