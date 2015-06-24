@@ -1,4 +1,4 @@
-#![feature(std_misc, scoped)]
+#![feature(static_mutex, scoped)]
 
 extern crate physfs;
 
