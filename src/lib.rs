@@ -1,8 +1,7 @@
 //! PhysFS bindings for Rust
 
 #![deny(missing_docs)]
-
-#![feature(convert, std_misc)]
+#![feature(convert, static_mutex)]
 
 extern crate libc;
 

@@ -1,6 +1,8 @@
 language: rust
 notifications:
     irc: "irc.mozilla.org#piston-internals"
+rust:
+    - nightly
 os:
     - linux
     - osx
